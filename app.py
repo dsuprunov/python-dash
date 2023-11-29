@@ -80,8 +80,6 @@ def tab_visualize():
         'Y': np.random.rand(50),
     })
 
-    fig = px.scatter(df, x='X', y='Y', title='Scatter Plot')
-
     return html.Div([
         dcc.Graph(
             id='scatter-plot',
