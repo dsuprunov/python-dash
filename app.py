@@ -3,9 +3,12 @@ from dash import Input
 from dash import Output
 from dash import html
 from dash import dash_table
+from dash import dcc
 import dash_bootstrap_components as dbc
 import pandas as pd
 import numpy as np
+import plotly.express as px
+
 
 import config
 
@@ -71,16 +74,27 @@ def tab_inspect():
 
 
 def tab_visualize():
+    np.random.seed(42)
+    df = pd.DataFrame({
+        'X': np.random.rand(50),
+        'Y': np.random.rand(50),
+    })
+
+    fig = px.scatter(df, x='X', y='Y', title='Scatter Plot')
+
     return html.Div([
-        html.P("Nothing here yet...")
+        dcc.Graph(
+            id='scatter-plot',
+            figure=px.scatter(df, x='X', y='Y', title='Scatter Plot')
+        )
     ])
 
 
 def tab_export():
     return html.Div([
-        html.P("Nothing here yet...")
+        html.P('Nothing here yet...')
     ])
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run_server(debug=True)
