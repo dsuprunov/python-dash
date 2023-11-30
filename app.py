@@ -89,19 +89,17 @@ def render_explore_content(selected_column):
     df = df[selected_column].value_counts(normalize=True) * 100
     df = df.reset_index()
 
-    return html.Div([
-        html.Div(f'{selected_column} selected'),
-        dcc.Graph(
-            id='tab-explore-columns-output-graph',
-            figure=px.bar(
-                df,
-                x=selected_column,
-                y='proportion',
-                labels={'selected_column': 'Percentage (%)'},
-                title='Percentage Distribution'
-            ),
-        )
-    ])
+    return dcc.Graph(
+        id='tab-explore-columns-output-graph',
+        figure=px.bar(
+            df,
+            x=selected_column,
+            y='proportion',
+            labels={'selected_column': 'Percentage (%)'},
+            title='Percentage Distribution'
+        ),
+    )
+
 
 
 if __name__ == '__main__':
