@@ -1,98 +1,108 @@
-import dash
-from dash import Input
-from dash import Output
-from dash import html
-from dash import dash_table
-from dash import dcc
-import dash_bootstrap_components as dbc
+from dash import Dash, dcc, html, Input, Output, callback, dash_table
+import plotly.express as px
 import pandas as pd
 import numpy as np
-import plotly.express as px
-
 
 import config
 
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-app.layout = dbc.Card(
-    [
-        dbc.CardHeader(
-            dbc.Tabs(
-                [
-                    dbc.Tab(label='Inspect', tab_id='tab-inspect', active_tab_style={'font-weight': 'bold'}),
-                    dbc.Tab(label='Visualize', tab_id='tab-visualize', active_tab_style={'font-weight': 'bold'}),
-                    dbc.Tab(label='Export', tab_id='tab-export', active_tab_style={'font-weight': 'bold'}),
-                ],
-                id='card-tabs',
-                active_tab='tab-inspect',
-            )
-        ),
-        dbc.CardBody(html.P(id='card-content', className='card-text')),
-    ]
+app = Dash(
+    __name__,
+    external_stylesheets=external_stylesheets,
+    suppress_callback_exceptions=True
 )
+
+app.layout = html.Div([
+    dcc.Tabs(id='tabs-labels', value='tab-explore', children=[
+        dcc.Tab(label='Explore', value='tab-explore'),
+        dcc.Tab(label='Visualize', value='tab-visualize'),
+        dcc.Tab(label='Export', value='tab-export'),
+    ]),
+    html.Div(id='tabs-content')
+])
+
+
+@callback(Output('tabs-content', 'children'),
+          Input('tabs-labels', 'value'))
+def render_tab_content(tab):
+    match tab:
+        case 'tab-explore':
+            df = pd.read_csv(config.DATA_CSV)
+            df.replace('?', np.nan, inplace=True)
+
+            return html.Div([
+                html.Br(),
+                dash_table.DataTable(
+                    id='table',
+                    columns=[{'name': i, 'id': i} for i in df.columns],
+                    data=df.to_dict('records'),
+                    page_size=10,
+                    page_action='native',
+                ),
+                dcc.Dropdown(
+                    id='tab-explore-columns-dropdown',
+                    options=[{'label': col, 'value': col} for col in df.columns],
+                    value=''
+                ),
+                html.Div(id='tab-explore-columns-output')
+            ])
+
+        case 'tab-visualize':
+            return html.Div([
+                dcc.Graph(
+                    id='tab-visualize-graph',
+                    figure={
+                        'data': [{
+                            'x': [1, 2, 3],
+                            'y': [5, 10, 6],
+                            'type': 'bar'
+                        }]
+                    }
+                )
+            ])
+
+        case 'tab-export':
+            return html.Div([
+                html.Div('Nothing here yet...')
+            ])
+
+        case _:
+            html.Div('Oops, something went wrong. You should not see this.')
 
 
 @app.callback(
-    Output('card-content', 'children'),
-    [Input('card-tabs', 'active_tab')]
+    Output('tab-explore-columns-output', 'children'),
+    [Input('tab-explore-columns-dropdown', 'value')]
 )
-def tab_content(active_tab):
-    match active_tab:
-        case 'tab-inspect':
-            return tab_inspect()
+def render_explore_content(selected_column):
+    if selected_column == '':
+        return ''
 
-        case 'tab-visualize':
-            return tab_visualize()
-
-        case 'tab-export':
-            return tab_export()
-
-        case _:
-            html.P("This shouldn't ever be displayed...")
-    return f'This is tab {active_tab}'
-
-
-def tab_inspect():
     df = pd.read_csv(config.DATA_CSV)
     df.replace('?', np.nan, inplace=True)
 
-    # ToDo: add input to set/select rows per page
+    if selected_column not in df.columns:
+        return ''
+
+    df = df[selected_column].value_counts(normalize=True) * 100
+    df = df.reset_index()
 
     return html.Div([
-        dash_table.DataTable(
-            id='table',
-            columns=[{'name': i, 'id': i} for i in df.columns],
-            data=df.to_dict('records'),
-            page_size=10,
-            page_action='native',  # pagination
-            # sort_action='native',  # sorting
-            # filter_action='native',  # filtering
-            # fixed_rows={'headers': True},  # scrolling with fix headers
-        )
-    ])
-
-
-def tab_visualize():
-    np.random.seed(42)
-    df = pd.DataFrame({
-        'X': np.random.rand(50),
-        'Y': np.random.rand(50),
-    })
-
-    return html.Div([
+        html.Div(f'{selected_column} selected'),
         dcc.Graph(
-            id='scatter-plot',
-            figure=px.scatter(df, x='X', y='Y', title='Scatter Plot')
+            id='tab-explore-columns-output-graph',
+            figure=px.bar(
+                df,
+                x=selected_column,
+                y='proportion',
+                labels={'selected_column': 'Percentage (%)'},
+                title='Percentage Distribution'
+            ),
         )
-    ])
-
-
-def tab_export():
-    return html.Div([
-        html.P('Nothing here yet...')
     ])
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run(debug=True)
