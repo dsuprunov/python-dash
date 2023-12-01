@@ -1,1 +1,2 @@
 DATA_CSV = 'census.csv'
+DATA_TABLE_PAGE_SIZE = 10
