@@ -29,7 +29,7 @@ app.layout = html.Div([
 def render_tab_content(tab):
     match tab:
         case 'tab-explore':
-            df = pd.read_csv(config.DATA_CSV)
+            df = pd.read_csv(config.DATA_CSV_FILE)
             df.replace('?', np.nan, inplace=True)
 
             return html.Div([
@@ -80,7 +80,7 @@ def render_explore_content(selected_column):
     if selected_column == '':
         return ''
 
-    df = pd.read_csv(config.DATA_CSV)
+    df = pd.read_csv(config.DATA_CSV_FILE)
     df.replace('?', np.nan, inplace=True)
 
     if selected_column not in df.columns:
